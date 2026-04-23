@@ -17,18 +17,47 @@ let useMetric = preferenceService.getUseMetric();
 let followRoads = preferenceService.getShouldFollowRoads();
 let isWaiting = false;
 
-const initialFocus = preferenceService.getLastOrDefaultFocus();
+const sharedPolyline = new URLSearchParams(window.location.search).get(SHARE_PARAM);
+let sharedPoints: Array<[number, number]> | null = null;
+if (sharedPolyline) {
+  try {
+    const decoded = decodePolyline(sharedPolyline);
+    if (decoded.length > 0) sharedPoints = decoded;
+  } catch { /* fall through to globe default */ }
+}
+
 const mapStyle = getStyleById(preferenceService.getMapStyle());
 const mbk = atob(ps);
 (mapboxgl as any)[atob('YWNjZXNzVG9rZW4=')] = mbk;
-let map = new Map({
+
+const mapOptions: any = {
   pitchWithRotate: false,
-  center: [initialFocus.lng, initialFocus.lat],
-  zoom: initialFocus.zoom,
   container: 'mapbox-container',
   style: mapStyle,
   attributionControl: false
-});
+};
+if (sharedPoints && sharedPoints.length > 1) {
+  mapOptions.bounds = polylineBounds(sharedPoints);
+  mapOptions.fitBoundsOptions = { padding: 60 };
+} else if (sharedPoints && sharedPoints.length === 1) {
+  mapOptions.center = sharedPoints[0];
+  mapOptions.zoom = 14;
+} else {
+  mapOptions.center = [0, 20];
+  mapOptions.zoom = 1;
+}
+let map = new Map(mapOptions);
+
+function polylineBounds(points: Array<[number, number]>): [[number, number], [number, number]] {
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const [lng, lat] of points) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  return [[minLng, minLat], [maxLng, maxLat]];
+}
 
 let nextSegmentService = new NextSegmentService(mbk);
 
@@ -75,9 +104,8 @@ map.on('load', () => {
     }),
     'bottom-right');
     
-  const sharedRun = new URLSearchParams(window.location.search).get(SHARE_PARAM);
-  if (sharedRun) {
-    loadRunFromPolyline(sharedRun);
+  if (sharedPoints) {
+    loadRunFromPoints(sharedPoints);
   } else {
     jsonToRun(preferenceService.getLastRun());
     if (currentRun !== undefined) showRunButtons();
@@ -269,13 +297,7 @@ function flashShareFeedback(): void {
   setTimeout(() => shareRunElement.classList.remove('copied'), 1500);
 }
 
-async function loadRunFromPolyline(encoded: string): Promise<void> {
-  let points: Array<[number, number]>;
-  try {
-    points = decodePolyline(encoded);
-  } catch {
-    return;
-  }
+async function loadRunFromPoints(points: Array<[number, number]>): Promise<void> {
   if (points.length < 1) return;
 
   const [startLng, startLat] = points[0];
@@ -285,8 +307,6 @@ async function loadRunFromPolyline(encoded: string): Promise<void> {
   currentRun = new CurrentRun(start);
   showRunButtons();
   updateLengthElement();
-
-  map.flyTo({ center: [startLng, startLat], zoom: 14 });
 
   let prev = startLngLat;
   for (let i = 1; i < points.length; i++) {
