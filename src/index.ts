@@ -7,6 +7,9 @@ import { ps } from './appsettings.secrets';
 import { AnimationService } from './animation-service';
 import { NextSegmentService } from './next-segment-service';
 import { PreferenceService } from './preference-service';
+import { encode as encodePolyline, decode as decodePolyline } from './polyline';
+
+const SHARE_PARAM = 'r';
 
 let preferenceService = new PreferenceService();
 
@@ -48,6 +51,7 @@ let followRoadsElement = document.getElementById('follow-roads') as HTMLElement;
 let clearRunElement = document.getElementById('clear-run') as HTMLElement;
 let loadRunElement = document.getElementById('load-run') as HTMLElement;
 let saveRunElement = document.getElementById('save-run') as HTMLElement;
+let shareRunElement = document.getElementById('share-run') as HTMLElement;
 let streetStyleElement = document.getElementById('street-style') as HTMLElement;
 let satelliteStyleElement = document.getElementById('satellite-style') as HTMLElement;
 let darkStyleElement = document.getElementById('dark-style') as HTMLElement;
@@ -76,8 +80,13 @@ map.on('load', () => {
     }),
     'bottom-right');
     
-  jsonToRun(preferenceService.getLastRun());
-  if (currentRun !== undefined) showRunButtons();
+  const sharedRun = new URLSearchParams(window.location.search).get(SHARE_PARAM);
+  if (sharedRun) {
+    loadRunFromPolyline(sharedRun);
+  } else {
+    jsonToRun(preferenceService.getLastRun());
+    if (currentRun !== undefined) showRunButtons();
+  }
 });
 
 // click or tap
@@ -106,6 +115,7 @@ function showRunButtons(): void {
   removeLastElement.classList.add('slide-in');
   removeLastElement.setAttribute('aria-hidden', 'false');
   saveRunElement.classList.remove('hidden');
+  shareRunElement.classList.remove('hidden');
   clearRunElement.classList.remove('hidden');
 }
 
@@ -114,6 +124,7 @@ function hideRunButtons(): void {
   removeLastElement.classList.add('slide-out');
   removeLastElement.setAttribute('aria-hidden', 'true');
   saveRunElement.classList.add('hidden');
+  shareRunElement.classList.add('hidden');
   clearRunElement.classList.add('hidden');
 }
 
@@ -222,6 +233,79 @@ function jsonToRun(json: string, changeView: boolean = false): boolean {
   }
 }
 
+function waypointsFromRun(run: CurrentRun): Array<[number, number]> {
+  const points: Array<[number, number]> = [[run.start.lngLat.lng, run.start.lngLat.lat]];
+  for (const segment of run.segments) {
+    points.push([segment.lngLat.lng, segment.lngLat.lat]);
+  }
+  return points;
+}
+
+function buildShareUrl(run: CurrentRun): string {
+  const waypoints = waypointsFromRun(run);
+  const polyline = encodePolyline(waypoints);
+  const url = new URL(window.location.href);
+  url.search = '';
+  url.searchParams.set(SHARE_PARAM, polyline);
+  return url.toString();
+}
+
+async function shareRun(): Promise<void> {
+  if (!currentRun) return;
+  const shareUrl = buildShareUrl(currentRun);
+  const shareData = { title: 'RunMap route', text: 'Check out this route', url: shareUrl };
+  const nav = navigator as any;
+  if (typeof nav.share === 'function' && (typeof nav.canShare !== 'function' || nav.canShare(shareData))) {
+    try {
+      await nav.share(shareData);
+      return;
+    } catch {
+      // User cancelled or share failed — fall through to clipboard.
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    flashShareFeedback('Link copied');
+  } catch {
+    window.prompt('Copy this link to share:', shareUrl);
+  }
+}
+
+function flashShareFeedback(message: string): void {
+  const original = shareRunElement.textContent;
+  shareRunElement.textContent = message;
+  setTimeout(() => { shareRunElement.textContent = original; }, 1500);
+}
+
+async function loadRunFromPolyline(encoded: string): Promise<void> {
+  let points: Array<[number, number]>;
+  try {
+    points = decodePolyline(encoded);
+  } catch {
+    return;
+  }
+  if (points.length < 1) return;
+
+  const [startLng, startLat] = points[0];
+  const startLngLat = new LngLat(startLng, startLat);
+  const start = new RunStart(startLngLat);
+  start.setMarker(addMarker(startLngLat, true));
+  currentRun = new CurrentRun(start);
+  showRunButtons();
+  updateLengthElement();
+
+  map.flyTo({ center: [startLng, startLat], zoom: 14 });
+
+  let prev = startLngLat;
+  for (let i = 1; i < points.length; i++) {
+    const [lng, lat] = points[i];
+    const next = new LngLat(lng, lat);
+    await addSegmentFromDirectionsResponse(prev, next);
+    prev = next;
+  }
+  preferenceService.saveLastRun(runToJson(currentRun));
+}
+
 function downloadRun(): void {
   let run = runToJson(currentRun);
   let file = new Blob([run], {
@@ -272,6 +356,7 @@ function setupUserControls(): void {
   clearRunElement.onclick = () => closeMenuAction(clearRun);
   loadRunElement.onclick = showUploadForm;
   saveRunElement.onclick = () => closeMenuAction(downloadRun);
+  shareRunElement.onclick = shareRun;
 
   const id = preferenceService.getMapStyle();
   setSelectedMapToggleStyles(document.getElementById(id) as HTMLElement);

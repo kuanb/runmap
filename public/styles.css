@@ -94,29 +94,29 @@ body {
 
 #run-length-container {
   top: 16px;
-  left: 72px;
-  min-height: 40px;
-  min-width: 40px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: baseline;
-  gap: 2px;
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 12px 22px;
 }
 
 #run-length {
-  font-size: 26px;
+  font-size: 40px;
   font-weight: 600;
   letter-spacing: -0.02em;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 #run-units {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
-  opacity: 0.7;
+  opacity: 0.75;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 #remove-last {
@@ -460,5 +460,17 @@ body {
     min-width: 0;
     width: calc(100vw - 32px);
     max-width: 340px;
+  }
+
+  #run-length-container {
+    padding: 10px 18px;
+  }
+
+  #run-length {
+    font-size: 32px;
+  }
+
+  #run-units {
+    font-size: 13px;
   }
 }

@@ -34,7 +34,7 @@ export class PreferenceService {
   }
 
   public getUseMetric(): boolean {
-    return this.loadBooleanPreference(this.USE_METRIC_KEY);
+    return this.loadBooleanPreference(this.USE_METRIC_KEY, false);
   }
 
   public saveUseMetric(value: boolean): void {
@@ -73,10 +73,10 @@ export class PreferenceService {
     this.saveBooleanPreference(this.STORAGE_NOTICE_KEY, value);
   }
 
-  private loadBooleanPreference(settingKey: string): boolean {
+  private loadBooleanPreference(settingKey: string, defaultValue: boolean = true): boolean {
     const setting = localStorage.getItem(settingKey);
     if (setting === null) {
-      return true;
+      return defaultValue;
     } else {
       return setting === 'true';
     }
