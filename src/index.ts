@@ -23,7 +23,8 @@ let map = new Map({
   center: [initialFocus.lng, initialFocus.lat],
   zoom: initialFocus.zoom,
   container: 'mapbox-container',
-  style: mapStyle
+  style: mapStyle,
+  attributionControl: false
 });
 
 let nextSegmentService = new NextSegmentService(mbk);
