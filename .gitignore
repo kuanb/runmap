@@ -5,3 +5,6 @@ npm-debug.log
 /spec/.working/
 .nyc_output
 coverage
+/public/app.js
+/public/app.js.LICENSE.txt
+/public/vendor.js
