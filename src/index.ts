@@ -292,9 +292,10 @@ async function loadRunFromPolyline(encoded: string): Promise<void> {
   for (let i = 1; i < points.length; i++) {
     const [lng, lat] = points[i];
     const next = new LngLat(lng, lat);
-    await addSegmentFromDirectionsResponse(prev, next);
+    await addSegmentFromDirectionsResponse(prev, next, false);
     prev = next;
   }
+  animationService.readdRunToMap(currentRun);
   preferenceService.saveLastRun(runToJson(currentRun));
 }
 
