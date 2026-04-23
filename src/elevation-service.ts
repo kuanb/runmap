@@ -80,7 +80,7 @@ export class ElevationService {
     const m = this.map as any;
     if (typeof m.queryTerrainElevation !== 'function') return null;
     try {
-      const el = m.queryTerrainElevation(new LngLat(coord[0], coord[1]));
+      const el = m.queryTerrainElevation(new LngLat(coord[0], coord[1]), { exaggerated: false });
       return typeof el === 'number' && isFinite(el) ? el : null;
     } catch {
       return null;

@@ -133,7 +133,7 @@ function ensureTerrain(): void {
       maxzoom: 14
     } as any);
   }
-  (map as any).setTerrain({ source: 'mapbox-dem', exaggeration: 0 });
+  (map as any).setTerrain({ source: 'mapbox-dem', exaggeration: 1 });
 }
 
 // click or tap
