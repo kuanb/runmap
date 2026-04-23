@@ -127,6 +127,20 @@
   </span>
 </div>
 
+<div id="elevation-container" class="map-overlay hidden">
+  <svg id="elevation-chart" viewBox="0 0 400 70" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="elev-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="currentColor" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="currentColor" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path id="elev-area" fill="url(#elev-gradient)" />
+    <path id="elev-line" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
+  </svg>
+  <div id="elevation-stats"></div>
+</div>
+
 <div id="help-notice" class="map-overlay" style="display: none">
   <div>
     Click/tap anywhere on the map to add points in order to map out your run! See the <a target="_blank" href="about.html">about page</a> to

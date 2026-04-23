@@ -8,6 +8,8 @@ import { AnimationService } from './animation-service';
 import { NextSegmentService } from './next-segment-service';
 import { PreferenceService } from './preference-service';
 import { encode as encodePolyline, decode as decodePolyline } from './polyline';
+import { ElevationService } from './elevation-service';
+import { renderElevationChart, formatElevation } from './elevation-chart';
 
 const SHARE_PARAM = 'r';
 
@@ -64,6 +66,8 @@ let nextSegmentService = new NextSegmentService(mbk);
 let currentRun: CurrentRun = undefined;
 
 let animationService = new AnimationService(map);
+let elevationService = new ElevationService(map);
+elevationService.onChange(() => updateElevationChart());
 
 let lengthElement = document.getElementById('run-length') as HTMLElement;
 let unitsElement = document.getElementById('run-units') as HTMLElement;
@@ -85,6 +89,12 @@ let removeLastElement = document.getElementById('remove-last') as HTMLElement;
 
 let helpElement = document.getElementById('help-notice') as HTMLElement;
 let dismissHelpElement = document.getElementById('dismiss-notice') as HTMLElement;
+
+let elevationContainer = document.getElementById('elevation-container') as HTMLElement;
+let elevationAreaPath = document.getElementById('elev-area') as unknown as SVGPathElement;
+let elevationLinePath = document.getElementById('elev-line') as unknown as SVGPathElement;
+let elevationStats = document.getElementById('elevation-stats') as HTMLElement;
+
 setupUserControls();
 
 map.on('load', () => {
@@ -103,7 +113,9 @@ map.on('load', () => {
       preferenceService.saveCurrentFocus(p, map.getZoom());
     }),
     'bottom-right');
-    
+
+  ensureTerrain();
+
   if (sharedPoints) {
     loadRunFromPoints(sharedPoints);
   } else {
@@ -111,6 +123,18 @@ map.on('load', () => {
     if (currentRun !== undefined) showRunButtons();
   }
 });
+
+function ensureTerrain(): void {
+  if (!map.getSource('mapbox-dem')) {
+    map.addSource('mapbox-dem', {
+      type: 'raster-dem',
+      url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+      tileSize: 512,
+      maxzoom: 14
+    } as any);
+  }
+  (map as any).setTerrain({ source: 'mapbox-dem', exaggeration: 0 });
+}
 
 // click or tap
 map.on('click', (e: MapMouseEvent) => {
@@ -130,6 +154,7 @@ map.on('click', (e: MapMouseEvent) => {
 
 // triggered upon map style changed
 map.on('style.load', () => {
+  ensureTerrain();
   animationService.readdRunToMap(currentRun);
 });
 
@@ -183,6 +208,7 @@ function addSegmentFromDirectionsResponse(previousLngLat: LngLat, lngLat: LngLat
       const marker = addMarker(new LngLat(segmentEnd[0], segmentEnd[1]), false);
       currentRun.addSegment(newSegment, marker);
       updateLengthElement();
+      elevationService.addSegment(newSegment);
     }, err => {
       alert(`An error occurred getting directions: ${err}`);
     });
@@ -195,6 +221,7 @@ function addSegmentFromStraightLine(previousLngLat: LngLat, lngLat: LngLat, anim
   const marker = addMarker(lngLat, false);
   currentRun.addSegment(newSegment, marker);
   updateLengthElement();
+  elevationService.addSegment(newSegment);
 }
 
 function runToJson(run: CurrentRun): string {
@@ -364,6 +391,7 @@ function hideStorageElement(): void {
 function toggleDistanceUnits(): void {
   useMetric = !useMetric;
   updateLengthElement();
+  updateElevationChart();
   preferenceService.saveUseMetric(useMetric);
 }
 
@@ -391,9 +419,11 @@ function removeLastSegment(): void {
   let lastPoint = currentRun.removeLastSegment();
   if (lastPoint) {
     map.setLayoutProperty(lastPoint.id, 'visibility', 'none');
+    elevationService.removeSegment(lastPoint.id);
     updateLengthElement();
   } else if (currentRun.start) {
     currentRun.start.marker.remove();
+    elevationService.clear();
     updateLengthElement();
     currentRun = undefined;
     hideRunButtons();
@@ -406,6 +436,26 @@ function clearRun(commit: boolean = true): void {
     removeLastSegment();
   }
   if (commit) preferenceService.saveLastRun(runToJson(currentRun));
+}
+
+function updateElevationChart(): void {
+  if (!currentRun || currentRun.segments.length === 0) {
+    elevationContainer.classList.add('hidden');
+    elevationAreaPath.setAttribute('d', '');
+    elevationLinePath.setAttribute('d', '');
+    elevationStats.textContent = '';
+    return;
+  }
+  const profile = elevationService.getProfile(currentRun.segments);
+  if (profile.length < 2) {
+    elevationContainer.classList.add('hidden');
+    return;
+  }
+  const metrics = renderElevationChart(profile, elevationAreaPath, elevationLinePath);
+  elevationContainer.classList.remove('hidden');
+  elevationStats.innerHTML =
+    `<span class="stat-up">↑ ${formatElevation(metrics.gainMeters, useMetric)}</span>` +
+    `<span>↓ ${formatElevation(metrics.lossMeters, useMetric)}</span>`;
 }
 
 function updateLengthElement(): void {
