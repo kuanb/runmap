@@ -180,86 +180,41 @@ body {
   z-index: 4;
 }
 
-#upload-container {
-  background: var(--surface-light);
-  border-radius: var(--radius-lg);
-  transition: transform 0.25s var(--ease), opacity 0.25s var(--ease);
-  padding: 24px;
-  box-shadow: var(--shadow-lg);
-  min-width: 340px;
-}
-
-.uploadbox {
-  width: 100%;
-  height: 140px;
-  line-height: 1.4;
-  text-align: center;
-  cursor: pointer;
-  margin: 16px 0;
-  border: 2px dashed #d4d4d8;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 14px;
-  position: relative;
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
-}
-
-.uploadbox:hover {
-  border-color: var(--accent);
-  background: rgba(16, 185, 129, 0.04);
-}
-
-.uploadbox input[type="file"] {
   cursor: pointer;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  outline: none;
-  opacity: 0;
-}
-
-#upload-container:not(.showing-form) {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.94);
-}
-
-#upload-container h1 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-}
-
-.button {
-  margin: 0 auto;
-  cursor: pointer;
-  user-select: none;
-  border: none;
-  appearance: none;
-  height: 36px;
-  padding: 0 20px;
-  background-color: var(--accent);
-  color: #fff;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
-  font-size: 14px;
   transition: background 0.15s var(--ease), transform 0.1s var(--ease);
 }
 
-.button:hover {
-  background-color: var(--accent-hover);
+.icon-btn:hover {
+  background: var(--surface-dark-hover);
 }
 
-.button:active {
-  transform: scale(0.97);
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+#share-run {
+  top: 16px;
+  right: 16px;
+}
+
+#share-run .check-icon {
+  display: none;
+  color: var(--accent);
+}
+
+#share-run.copied .share-icon {
+  display: none;
+}
+
+#share-run.copied .check-icon {
+  display: block;
 }
 
 .settings-open {
@@ -454,12 +409,6 @@ body {
 
   .settings-open {
     transform: translateX(300px);
-  }
-
-  #upload-container {
-    min-width: 0;
-    width: calc(100vw - 32px);
-    max-width: 340px;
   }
 
   #run-length-container {

@@ -79,39 +79,9 @@
       </button>
     </li>
     <li>
-      <button id="save-run" aria-label="Save the current run to a JSON file" class="hidden">
-        Save run
-      </button>
-    </li>
-    <li>
-      <button id="share-run" aria-label="Copy a shareable link to the current run" class="hidden">
-        Share run
-      </button>
-    </li>
-    <li>
-      <button id="load-run" aria-label="Load a run from a JSON file">
-        Load run
-      </button>
-    </li>
-    <li>
       <a href="about.html" target="_blank">About</a>
     </li>
   </ul>
-</div>
-
-<div id="upload-container" aria-hidden="false" class="fixed-center">
-  <form id="upload-form">
-    <h1>
-      Load a run
-    </h1>
-    <div class="uploadbox">
-      <input type="file" id="run-input">
-      <span>
-        drag a file or click here
-      </span>
-    </div>
-    <input type="submit" class="button" value="Upload!">
-  </form>
 </div>
 
 <div id="settings-scrim" aria-hidden="true"></div>
@@ -126,6 +96,21 @@
     </svg>
   </button>
 </div>
+
+<button id="share-run" class="map-overlay icon-btn hidden" aria-label="Copy a shareable link to this run">
+  <!-- share -->
+  <svg class="share-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="18" cy="5" r="3"/>
+    <circle cx="6" cy="12" r="3"/>
+    <circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+  <!-- check -->
+  <svg class="check-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+</button>
 <div id="run-length-container" class="map-overlay">
   <span id="run-length" title="Toggle mi/km"></span>
   <span id="run-units"></span>

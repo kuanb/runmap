@@ -43,14 +43,9 @@ let menuElement = document.getElementById('menu-toggle') as HTMLElement;
 let settingsElement = document.getElementById('settings-pane') as HTMLElement;
 let closeElement = document.getElementById('close-settings') as HTMLElement;
 let scrimElement = document.getElementById('settings-scrim') as HTMLElement;
-let uploadContainer = document.getElementById('upload-container') as HTMLElement
-let uploadForm = document.getElementById('upload-form') as HTMLElement;
-let runInput = document.getElementById('run-input') as HTMLInputElement;
 let toggleUnitsElement = document.getElementById('toggle-units') as HTMLElement;
 let followRoadsElement = document.getElementById('follow-roads') as HTMLElement;
 let clearRunElement = document.getElementById('clear-run') as HTMLElement;
-let loadRunElement = document.getElementById('load-run') as HTMLElement;
-let saveRunElement = document.getElementById('save-run') as HTMLElement;
 let shareRunElement = document.getElementById('share-run') as HTMLElement;
 let streetStyleElement = document.getElementById('street-style') as HTMLElement;
 let satelliteStyleElement = document.getElementById('satellite-style') as HTMLElement;
@@ -114,7 +109,6 @@ function showRunButtons(): void {
   removeLastElement.classList.remove('slide-out');
   removeLastElement.classList.add('slide-in');
   removeLastElement.setAttribute('aria-hidden', 'false');
-  saveRunElement.classList.remove('hidden');
   shareRunElement.classList.remove('hidden');
   clearRunElement.classList.remove('hidden');
 }
@@ -123,7 +117,6 @@ function hideRunButtons(): void {
   removeLastElement.classList.remove('slide-in');
   removeLastElement.classList.add('slide-out');
   removeLastElement.setAttribute('aria-hidden', 'true');
-  saveRunElement.classList.add('hidden');
   shareRunElement.classList.add('hidden');
   clearRunElement.classList.add('hidden');
 }
@@ -265,16 +258,15 @@ async function shareRun(): Promise<void> {
   }
   try {
     await navigator.clipboard.writeText(shareUrl);
-    flashShareFeedback('Link copied');
+    flashShareFeedback();
   } catch {
     window.prompt('Copy this link to share:', shareUrl);
   }
 }
 
-function flashShareFeedback(message: string): void {
-  const original = shareRunElement.textContent;
-  shareRunElement.textContent = message;
-  setTimeout(() => { shareRunElement.textContent = original; }, 1500);
+function flashShareFeedback(): void {
+  shareRunElement.classList.add('copied');
+  setTimeout(() => shareRunElement.classList.remove('copied'), 1500);
 }
 
 async function loadRunFromPolyline(encoded: string): Promise<void> {
@@ -306,37 +298,6 @@ async function loadRunFromPolyline(encoded: string): Promise<void> {
   preferenceService.saveLastRun(runToJson(currentRun));
 }
 
-function downloadRun(): void {
-  let run = runToJson(currentRun);
-  let file = new Blob([run], {
-    type: "application/json"
-  });
-  let url = URL.createObjectURL(file);
-  let link = document.createElement("a");
-  link.href = url;
-  let date = new Date();
-  link.download = `run-${date.getMonth() + 1}-${date.getDate()}-${date.getFullYear() % 100}.runmap`;
-  link.click();
-}
-
-function showUploadForm(): void {
-  closeMenu(false);
-  uploadContainer.classList.add("showing-form");
-  uploadContainer.setAttribute('aria-hidden', 'false');
-  runInput.value = "";
-}
-
-async function loadRun(e: Event): Promise<void> {
-  e.preventDefault();
-  if (!runInput.files.length) return void (runInput.parentElement.querySelector("span").innerText = "No file selected");
-  let json = await runInput.files[0].text();
-  let loadsuccessful = jsonToRun(json, true);
-  if (!loadsuccessful) return void (runInput.parentElement.querySelector("span").innerText = "Error loading run");
-  closeMenu();
-  showRunButtons();
-  setTimeout(() => preferenceService.saveLastRun(runToJson(currentRun)), 100);
-}
-
 function setupUserControls(): void {
   showHelpElementIfNecessary();
   dismissHelpElement.onclick = hideStorageElement;
@@ -354,8 +315,6 @@ function setupUserControls(): void {
   setFollowRoads(followRoads);
   followRoadsElement.onclick = () => closeMenuAction(toggleFollowRoads);
   clearRunElement.onclick = () => closeMenuAction(clearRun);
-  loadRunElement.onclick = showUploadForm;
-  saveRunElement.onclick = () => closeMenuAction(downloadRun);
   shareRunElement.onclick = shareRun;
 
   const id = preferenceService.getMapStyle();
@@ -363,11 +322,6 @@ function setupUserControls(): void {
   streetStyleElement.onclick = () => closeMenuAction(() => setSelectedMapToggleStyles(streetStyleElement));
   satelliteStyleElement.onclick = () => closeMenuAction(() => setSelectedMapToggleStyles(satelliteStyleElement));
   darkStyleElement.onclick = () => closeMenuAction(() => setSelectedMapToggleStyles(darkStyleElement));
-  
-  runInput.onchange = () => {
-    runInput.parentElement.querySelector("span").innerText = runInput.files[0].name;
-  }
-  uploadForm.onsubmit = loadRun;
 }
 
 function closeMenuAction(fn: () => void) {
@@ -461,15 +415,11 @@ function openMenu() {
   scrimElement.classList.add('scrim-shown');
 }
 
-function closeMenu(hideForm: boolean = true) {
+function closeMenu() {
   settingsElement.classList.remove('settings-open');
   settingsElement.setAttribute('aria-hidden', 'true');
-  if (!hideForm) return;
-  uploadContainer.classList.remove("showing-form");
-  uploadContainer.setAttribute('aria-hidden', 'true');
   scrimElement.classList.remove('scrim-shown');
   scrimElement.classList.add('scrim-hidden');
-  runInput.parentElement.querySelector("span").innerText = "drag a file or click here";
 }
 
 function setFollowRoads(value: boolean) {
