@@ -50,7 +50,7 @@ export class PreferenceService {
   }
 
   public getMapStyle(): string {
-    return this.loadStringPreference(this.MAP_STYLE_KEY, 'street-style');
+    return this.loadStringPreference(this.MAP_STYLE_KEY, 'dark-style');
   }
 
   public saveMapStyle(value: string) {
